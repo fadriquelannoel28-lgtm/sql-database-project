@@ -215,6 +215,10 @@ header p:hover {
     margin: 4px 4px;
     padding: 4px 20px;
     font-size: 10px;
+    }
+
+    .login-margin {
+    padding: 50px 100px;
 }
     
 }
