@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Report</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('home') }}" class="home">Home</a>
+        <a href="{{ url_for('event') }}" class="event">Events</a>
+        <a href="{{ url_for('report') }}" class="report active">Report</a>
+        <a href="{{ url_for('dashboard') }}" class="dashboard">Dashboard</a>
+        <a href="{{ url_for('community') }}" class="community">Community</a>
+    </nav>
+
+    <div class="index margin">
+        <form method="POST" enctype="multipart/form-data">
+            {% if success %}
+                <p style="color: green;">{{ success }}</p>
+            {% endif %}
+            {% if error %}
+                <p style="color: red;">{{ error }}</p>
+            {% endif %}
+
+            <div>
+                <label for="event_name">Event Name</label><br>
+                <input type="text" id="event_name" name="event_name" required>
+            </div>
+
+            <div>
+                <label for="location">Location</label><br>
+                <input type="text" id="location" name="location" required>
+            </div>
+
+            <div>
+                <label for="description">Description</label><br>
+                <textarea id="description" name="description" rows="4" cols="40"></textarea>
+            </div>
+
+            <div>
+                <label for="datetime">Date &amp; Time</label><br>
+                <input type="datetime-local" id="datetime" name="datetime">
+            </div>
+
+            <div>
+                <label for="participants">Max Participants</label><br>
+                <input type="number" id="participants" name="participants" min="1" value="50">
+            </div>
+
+            <div>
+                <label for="image">Image</label><br>
+                <input type="file" id="image" name="image" accept="image/*">
+            </div>
+
+            <div>
+                <button type="submit">Create Event</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

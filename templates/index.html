@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Home page</title>
+<link rel="icon" type="image/x-icon" href="images/titleimage.ico">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <p>Welcome, {{ username }}!</p>
+        <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="{{ url_for('home') }}" class="home active">Home</a>
+        <a href="{{ url_for('event') }}" class="event">Events</a>
+        <a href="{{ url_for('report') }}" class="report">Report</a>
+        <a href="{{ url_for('dashboard') }}" class="dashboard">Dashboard</a>
+        <a href="{{ url_for('community') }}" class="community">Community</a>
+    </nav>
+    <div class="index">
+    <header>
+        <h1>WATER CLEANUP MOVEMENT</h1>
+        <p>Help protect our rivers, lakes, and oceans by joining cleanup drives and reporting polluted areas.
+Together, we can make our waters clean and safe for everyone.</p>
+    </header>
+    <br>
+    <br>
+    <a href="{{ url_for('event') }}">Join Now!</a>
+    <br>
+    <br>
+    <br>
+    <header class="header">
+        <h2>Our Mission</h2>
+        <p>We aim to reduce water pollution and restore aquatic ecosystems by uniting volunteers, communities, and organizations in collective cleanup efforts.
+Every small action creates ripples of change that lead to cleaner, healthier waterways.</p>
+    </header>
+    </div>
+</body>
+</html>

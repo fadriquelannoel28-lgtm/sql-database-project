@@ -1,0 +1,220 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+nav {
+    background: linear-gradient(to right, rgb(79, 250, 79), rgb(79, 180, 79));
+    overflow: hidden;
+    padding: 0px 30px;
+    display: flex;
+    justify-content: center;
+}
+nav p {
+    color: white;
+    font-size: 18px;
+    margin: 10px 20px;
+    padding: 10px 20px;
+}
+
+nav a {
+    text-decoration: none;
+    color: white;
+    margin: 10px 4px;
+    padding: 10px 20px;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+}
+
+nav a:hover {
+    background-color: rgb(0, 210, 0);
+    border-radius: 25px;
+    box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.3);
+}
+
+nav a.active {
+    background-color: rgb(0, 210, 0);
+    border-radius: 25px;
+    box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.3);
+}
+
+body {
+  background-image: url("images/cleanup1.jpg");
+}
+
+
+header {
+    margin: 20px 60px;
+    padding: 10px 10px;
+    overflow-wrap: break-word; 
+    text-align: center; 
+    max-width: 100%; 
+}
+
+header h1 {
+    font-family: sans-serif; 
+    font-weight: bold;
+    font-size: 80px;
+    word-wrap: break-word;
+    transition: transform 0.4s ease;
+}
+
+header h1:hover {
+    transform: translateX(10px);
+}
+
+header p {
+    transition: transform 0.4s ease;
+}
+
+header h2 {
+    transition: transform 0.4s ease;
+}
+
+header h2:hover {
+    transform: translateX(10px);
+}
+
+header p:hover {
+    transform: translateX(10px);
+}
+
+.index {
+    margin: 20px 200px;
+    border-radius: 18px;
+    box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    text-align: center;
+    transform: translateX(-50px);
+    animation: fadeIn 1.0s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; 
+           transform: translateX(-50px); }
+    to { opacity: 1; 
+         transform: translateX(0); }
+}
+
+.index a {
+    text-decoration: none;
+    color: black;
+    margin: 10px 4px;
+    padding: 10px 40px;
+    font-size: 18px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.index a:hover {
+    background-color: greenyellow;
+    color: green;
+    transform: translateY(5px);
+}
+
+.index p {
+    font-size: 25px;
+}
+
+.header p {
+    text-align: justify;
+}
+
+/* Form styling inside .index */
+.index form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Labels */
+.index label {
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+/* Inputs, textarea, and file */
+.index input[type="text"],
+.index input[type="number"],
+.index input[type="datetime-local"],
+.index input[type="file"],
+.index textarea {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Focus effect */
+.index input:focus,
+.index textarea:focus {
+    border-color: #3BAFDA;
+    outline: none;
+    box-shadow: 0 0 5px rgba(59, 175, 218, 0.5);
+}
+
+/* Submit button */
+.index button {
+    background-color: #3BAFDA;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+.margin {
+    padding: 10px 150px;
+}
+.index button:hover {
+    background-color: #2D9CDB;
+}
+
+.login {
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(to right, rgb(79, 250, 79), rgb(79, 180, 79));
+}
+
+.login-margin {
+    padding: 100px 400px;
+}
+
+@media (max-width: 767px) {
+    nav {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    nav a {
+        padding: 10px 100%;
+        margin: 0px 4px; 
+        font-size: 10px;
+    }
+
+    header {
+        margin: 10px 20px;
+    }
+
+    header h1 {
+        font-size: 30px;
+    }
+
+    .index {
+        margin: 10px 50px;
+    }
+
+    .index a {
+    margin: 4px 4px;
+    padding: 4px 20px;
+    font-size: 10px;
+}
+    
+}
