@@ -122,20 +122,18 @@ header p:hover {
     text-align: justify;
 }
 
-/* Form styling inside .index */
 .index form {
     display: flex;
     flex-direction: column;
 }
 
-/* Labels */
 .index label {
     font-weight: bold;
     margin-bottom: 6px;
     color: #333;
 }
 
-/* Inputs, textarea, and file */
+
 .index input[type="text"],
 .index input[type="number"],
 .index input[type="datetime-local"],
@@ -168,7 +166,6 @@ header p:hover {
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    width: 100%;
 }
 .margin {
     padding: 10px 150px;
@@ -186,6 +183,236 @@ header p:hover {
 .login-margin {
     padding: 100px 400px;
 }
+
+.margin-event {
+    padding: 50px;
+}
+
+
+
+.margin-event {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+}
+
+.event-card {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    background: #e5e5e5;
+    color: rgb(61, 61, 61); 
+    border-radius: 15px;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 0 15px rgba(0,0,0,0.4);
+}
+
+.delete-btn {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 22px;
+    color: red;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.delete-btn:hover { transform: scale(1.2); }
+
+.event-main {
+    width: 35%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.event-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.event-actions button {
+    margin: 5px;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.join-btn {
+    background: #3db13d;
+    color: white;
+}
+.join-btn.disabled {
+    background: gray;
+    cursor: not-allowed;
+}
+.leave-btn {
+    background: #d83b3b;
+    color: white;
+}
+.clear-btn {
+    background: #e3b437;
+    color: black;
+}
+
+
+.event-status {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.status-container {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-top: 5px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.status {
+    flex: 1;
+    padding: 6px;
+    border-radius: 8px;
+    text-align: center;
+    background: #a0a0a0;
+    color: white;
+    margin: 0 4px;
+    font-weight: bold;
+}
+
+.status.pending.active {
+    background: orange;
+}
+
+.status.in-progress.active {
+    background: gold;
+    color: black;
+}
+
+.status.resolved.active {
+    background: #4CAF50;
+}
+
+.event-details {
+    width: 60%;
+    background: #f5f5f5;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #bbb;
+}
+
+
+
+
+
+
+/* Delete button inside event-card only */
+.event-card .delete-btn {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 22px;
+    color: red;
+    cursor: pointer;
+    background: none;       /* ensures no inherited button background */
+    border: none;           /* removes border */
+    padding: 0;             /* remove default padding */
+    transition: transform 0.3s;
+}
+
+.event-card .delete-btn:hover { 
+    transform: scale(1.2); 
+}
+
+/* Make sure forms inside .event-actions or .index aren't affected */
+.event-card .event-actions form button {
+    all: unset;              /* reset inherited styles if needed */
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.event-card .event-actions .join-btn {
+    background: #3db13d;
+    color: white;
+}
+
+.event-card .event-actions .leave-btn {
+    background: #d83b3b;
+    color: white;
+}
+
+.event-card .event-actions .clear-btn {
+    background: #e3b437;
+    color: black;
+}
+
+
+
+
+
+
+.refresh-btn {
+    background: #3BAFDA;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.refresh-btn:hover {
+    background: #2D9CDB;
+    transform: translateY(-2px);
+}
+
+
+
+
+.resolved-actions {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.submit-btn {
+    background: #3db13d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.submit-btn:hover {
+    background: #2a932a;
+    transform: translateY(-2px);
+}
+
+
+
 
 @media (max-width: 767px) {
     nav {

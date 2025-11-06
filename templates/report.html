@@ -40,12 +40,12 @@
 
             <div>
                 <label for="datetime">Date &amp; Time</label><br>
-                <input type="datetime-local" id="datetime" name="datetime">
+                <input type="datetime-local" id="datetime" name="datetime" min="{{ min_date }}">
             </div>
 
             <div>
                 <label for="participants">Max Participants</label><br>
-                <input type="number" id="participants" name="participants" min="1" value="50">
+                <input type="number" id="participants" name="participants" min="1" max="50" value="50">
             </div>
 
             <div>
