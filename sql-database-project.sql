@@ -27,3 +27,11 @@ CREATE TABLE IF NOT EXISTS event_participants (
     username TEXT NOT NULL,
     UNIQUE(event_id, username)
 );
+
+CREATE TABLE IF NOT EXISTS community_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    description TEXT NOT NULL,
+    image TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

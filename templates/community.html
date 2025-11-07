@@ -3,68 +3,71 @@
 <head>
     <meta charset="utf-8">
     <title>Community</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <nav>
-        <a href="{{ url_for('home') }}" class="home">Home</a>
-        <a href="{{ url_for('event') }}" class="event">Events</a>
-        <a href="{{ url_for('report') }}" class="report">Report</a>
-        <a href="{{ url_for('dashboard') }}" class="dashboard">Dashboard</a>
-        <a href="{{ url_for('community') }}" class="community active">Community</a>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('event') }}">Events</a>
+        <a href="{{ url_for('report') }}">Report</a>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('community') }}" class="active">Community</a>
     </nav>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <h1>Hello, World!</h1>
+
+    <div class="community">
+        <div class="community-create">
+            <div class="create-left">
+                <h2>Create Post</h2>
+                <form action="{{ url_for('community') }}" method="post" enctype="multipart/form-data" class="create-form">
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="picture">Upload Picture</label><br>
+                            <input type="file" id="picture" name="picture" accept="image/*" required>
+                        </div>
+
+                        <div class="form-col">
+                            <label for="description">Description</label><br>
+                            <input type="text" id="description" name="description" placeholder="Write something..." required>
+                        </div>
+
+                        <button type="submit" class="create-btn">+</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="index">
+        <div class="community-list">
+        {% for post in posts %}
+            <div class="community-card community-card-{{ post.id }}">
+                <div class="card-left">
+                    {% if post.image %}
+                        <img class="card-img community-image-{{ post.id }}" 
+                            src="{{ url_for('static', filename='uploads/' ~ post.image) }}" 
+                            alt="post image">
+                    {% endif %}
+                </div>
+                <div class="card-right">
+                    <p>{{ post.description }}</p>
+                    <div class="card-info">
+                        <small>by: {{ post.username }} | {{ post.created_at.strftime("%b %d, %Y %I:%M %p") if post.created_at else "" }}</small>
+                    </div>
+                </div>
+
+                {% if session['username'] == post['username'] or session['username'] == 'admin' %}
+                <div class="card-actions card-actions-{{ post.id }}">
+                    <form action="{{ url_for('delete_post', post_id=post['id']) }}" method="post">
+                        <button type="submit" class="delete-btn delete-btn-{{ post.id }}">Delete</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+
+
 </body>
 </html>

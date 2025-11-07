@@ -41,7 +41,7 @@ body {
 }
 
 nav {
-    background: linear-gradient(to right, rgb(79, 250, 79), rgb(79, 180, 79));
+    background: linear-gradient(to right, rgb(111, 205, 255), rgb(0, 166, 255));
     overflow: hidden;
     padding: 0px 30px;
     display: flex;
@@ -64,13 +64,13 @@ nav a {
 }
 
 nav a:hover {
-    background-color: rgb(0, 210, 0);
+    background-color: rgb(98, 197, 251);
     border-radius: 25px;
     box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.3);
 }
 
 nav a.active {
-    background-color: rgb(0, 210, 0);
+    background-color: rgb(98, 197, 251);
     border-radius: 25px;
     box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.3);
 }
@@ -213,7 +213,7 @@ header p:hover {
 .login {
     width: 100%;
     height: 50px;
-    background: linear-gradient(to right, rgb(79, 250, 79), rgb(79, 180, 79));
+    background: linear-gradient(to right, rgb(98, 197, 251), rgb(39, 179, 254));
 }
 
 .login-margin {
@@ -507,4 +507,140 @@ hr {
 
 .event-list .status-terminated {
     background-color: gray;
+}
+
+/* COMMUNITY PAGE STYLES */
+
+/* Create post section */
+.community-create {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f2f2f2;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    margin-bottom: 40px;
+}
+
+.create-left {
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.create-left h2 {
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.create-btn {
+    background: #3db13d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+/* Form inside create section */
+.create-form .form-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.create-form .form-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.create-form label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.create-form input[type="file"],
+.create-form input[type="text"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.create-form input:focus {
+    border-color: #3db13d;
+    outline: none;
+}
+
+/* Community posts list */
+.community-list {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.community-card {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.15);
+    padding: 15px;
+    gap: 20px;
+    position: relative;
+}
+
+.card-left {
+    flex: 0 0 150px; /* fixed width for images */
+}
+
+.card-left img {
+    width: 250px;
+    max-height: 250px;
+    object-fit: cover;  /* crops large images nicely */
+    border-radius: 10px;
+}
+
+.card-right {
+    flex: 1;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-right: 80px;
+}
+
+.card-info {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #777;
+}
+
+/* Delete button */
+.card-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.delete-btn {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    z-index: 10;
 }
