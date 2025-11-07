@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS events (
     image TEXT,
     created_by TEXT,
     collected_trash INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'Pending'
+    status TEXT DEFAULT 'Pending',
+    holder_name TEXT
 );
 
 CREATE TABLE IF NOT EXISTS event_participants (

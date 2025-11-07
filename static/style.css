@@ -1,3 +1,39 @@
+@media (max-width: 767px) {
+    nav {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    nav a {
+        padding: 10px 100%;
+        margin: 0px 4px; 
+        font-size: 10px;
+    }
+
+    header {
+        margin: 10px 20px;
+    }
+
+    header h1 {
+        font-size: 30px;
+    }
+
+    .index {
+        margin: 10px 50px;
+    }
+
+    .index a {
+    margin: 4px 4px;
+    padding: 4px 20px;
+    font-size: 10px;
+    }
+
+    .login-margin {
+    padding: 50px 100px;
+}
+    
+}
+
 body {
     font-family: Arial, Helvetica, sans-serif;
     margin: 0;
@@ -411,41 +447,14 @@ hr {
     transform: translateY(-2px);
 }
 
-
-
-
-@media (max-width: 767px) {
-    nav {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    nav a {
-        padding: 10px 100%;
-        margin: 0px 4px; 
-        font-size: 10px;
-    }
-
-    header {
-        margin: 10px 20px;
-    }
-
-    header h1 {
-        font-size: 30px;
-    }
-
-    .index {
-        margin: 10px 50px;
-    }
-
-    .index a {
-    margin: 4px 4px;
-    padding: 4px 20px;
-    font-size: 10px;
-    }
-
-    .login-margin {
-    padding: 50px 100px;
-}
-    
+.event-card .event-actions .edit-btn,
+.event-card .event-actions .submit-btn {
+    background: #1785d8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
 }

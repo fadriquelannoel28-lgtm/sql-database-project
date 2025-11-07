@@ -9,6 +9,12 @@ app.secret_key = 'your_secret_key'
 
 DATABASE = 'database.db'
 
+def parse_event_datetime(dt_str):
+    try:
+        return datetime.fromisoformat(dt_str)
+    except ValueError:
+        return datetime.strptime(dt_str, "%b %d, %Y - %I:%M %p")
+
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
@@ -49,6 +55,8 @@ def home():
         return render_template('index.html', username=session['username'])
     return redirect(url_for('login'))
 
+
+
 @app.route('/event')
 def event():
     if 'username' not in session:
@@ -63,7 +71,7 @@ def event():
 
     for e in events:
         joined = conn.execute(
-            "SELECT * FROM event_participants WHERE event_id=? AND username=?",
+            "SELECT 1 FROM event_participants WHERE event_id=? AND username=?",
             (e['id'], username)
         ).fetchone() is not None
 
@@ -72,19 +80,46 @@ def event():
             (e['id'],)
         ).fetchone()['count']
 
+        event_time = parse_event_datetime(e['datetime'])
+        status = e['status']
+
+        if count == 0 and datetime.now() >= event_time and status != 'Terminated':
+            conn.execute("UPDATE events SET status='Terminated' WHERE id=?", (e['id'],))
+            conn.commit()
+            status = 'Terminated'
+
+        first_participant = conn.execute(
+            "SELECT username FROM event_participants WHERE event_id=? ORDER BY id ASC LIMIT 1",
+            (e['id'],)
+        ).fetchone()
+
+        holder = e['created_by']  
+        if conn.execute("SELECT 1 FROM event_participants WHERE event_id=? AND username=?",
+                        (e['id'], e['created_by'])).fetchone():
+            holder = e['created_by']
+        elif first_participant:
+            holder = first_participant['username']
+
+        holder = holder.strip() if holder else e['created_by']
+        if not e['holder_name'] or e['holder_name'].strip() != holder:
+            conn.execute("UPDATE events SET holder_name=? WHERE id=?", (holder, e['id']))
+            conn.commit()
+
         e_dict = dict(e)
         e_dict['joined'] = joined
         e_dict['participants'] = count
+        e_dict['max_participants'] = e['max_participants']
         e_dict['is_editing'] = (edit_trash_event_id == e['id'])
+        e_dict['holder'] = holder
+        e_dict['status'] = status
+        e_dict['readable_time'] = event_time.strftime("%b %d, %Y - %I:%M %p")
+
         events_with_joined.append(e_dict)
 
     conn.close()
-
-
     session.pop('edit_trash_event', None)
 
     return render_template('event.html', username=username, events=events_with_joined)
-
 
 @app.route('/join/<int:event_id>', methods=['POST'])
 def join_event(event_id):
@@ -94,24 +129,39 @@ def join_event(event_id):
     username = session['username']
     conn = get_db_connection()
 
-    # Check if user already joined
     already_joined = conn.execute(
         "SELECT * FROM event_participants WHERE event_id=? AND username=?",
         (event_id, username)
     ).fetchone()
 
     if not already_joined:
-        # Check participants count
         participants = conn.execute(
             "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
             (event_id,)
         ).fetchone()['count']
 
-        if participants < 50:
+        max_participants = conn.execute(
+            "SELECT max_participants FROM events WHERE id=?",
+            (event_id,)
+        ).fetchone()['max_participants']
+
+        if participants < max_participants:
             conn.execute(
                 "INSERT INTO event_participants (event_id, username) VALUES (?, ?)",
                 (event_id, username)
             )
+
+            current_holder = conn.execute(
+                "SELECT holder_name FROM events WHERE id=?",
+                (event_id,)
+            ).fetchone()['holder_name']
+
+            if not current_holder:
+                conn.execute(
+                    "UPDATE events SET holder_name=? WHERE id=?",
+                    (username, event_id)
+                )
+
             conn.commit()
 
     conn.close()
@@ -142,7 +192,7 @@ def delete_event(event_id):
     conn = get_db_connection()
 
     event = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
-    if event and (event['created_by'] == username or username == 'admin'):
+    if event and (event['created_by'] == username or username == 'admin' or event['holder_name'] == username):
         conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
         conn.execute("DELETE FROM event_participants WHERE event_id = ?", (event_id,))
         conn.commit()
@@ -160,9 +210,19 @@ def refresh_events():
     now = datetime.now()
 
     for event in events:
-        event_time = datetime.strptime(event['datetime'], "%b %d, %Y - %I:%M %p")
+        event_time = parse_event_datetime(event['datetime'])
+
+        count = conn.execute(
+            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
+            (event['id'],)
+        ).fetchone()['count']
+
         if now >= event_time:
-            conn.execute("UPDATE events SET status = 'In Progress' WHERE id = ?", (event['id'],))
+            if count == 0:
+                conn.execute("UPDATE events SET status = 'Terminated' WHERE id = ?", (event['id'],))
+            else:
+                conn.execute("UPDATE events SET status = 'In Progress' WHERE id = ?", (event['id'],))
+
     conn.commit()
     conn.close()
     
@@ -175,11 +235,20 @@ def clear_event(event_id):
 
     username = session['username']
     conn = get_db_connection()
+    
     event = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
-
-
-    if event and (event['created_by'] == username or username == 'admin'):
-        conn.execute("UPDATE events SET status = 'Resolved' WHERE id = ?", (event_id,))
+    
+    if event and (username == event['holder_name'] or username == 'admin'):
+        participant_count = conn.execute(
+            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
+            (event_id,)
+        ).fetchone()['count']
+        
+        if participant_count == 0:
+            conn.execute("UPDATE events SET status = 'Terminated' WHERE id = ?", (event_id,))
+        else:
+            conn.execute("UPDATE events SET status = 'Resolved' WHERE id = ?", (event_id,))
+        
         conn.commit()
 
     conn.close()
@@ -193,8 +262,8 @@ def submit_trash(event_id):
     conn = get_db_connection()
     event = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
 
-    
-    if not (session['username'] == event['created_by'] or session['username'] == 'admin'):
+    holder = event['holder_name']
+    if not (session['username'] == holder or session['username'] == event['created_by'] or session['username'] == 'admin'):
         conn.close()
         return "You are not allowed to submit or edit trash for this event.", 403
 
@@ -233,22 +302,17 @@ def report():
 
     error = None
     success = None
-    min_date = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    min_date = datetime.now().strftime("%Y-%m-%dT%H:%M")  
 
     if request.method == 'POST':
         event_name = request.form.get('event_name')
         location = request.form.get('location')
         description = request.form.get('description')
-        datetime_input = request.form.get('datetime')
-        formatted_datetime = datetime.strptime(datetime_input, "%Y-%m-%dT%H:%M").strftime("%b %d, %Y - %I:%M %p")
-        participants = 0
+        datetime_input = request.form.get('datetime')  
         image = request.files.get('image')
 
-        
         if datetime_input < min_date:
             error = "You cannot select a past date!"
-        elif participants > 50:
-            error = "Maximum participants is 50!"
         else:
             image_filename = None
             if image and image.filename != '':
@@ -257,13 +321,26 @@ def report():
                 image_filename = os.path.join(upload_dir, image.filename)
                 image.save(image_filename)
 
-            conn = get_db_connection()
             max_participants_input = request.form.get('participants')
             max_participants = int(max_participants_input) if max_participants_input else 50
 
+            event_datetime = datetime.strptime(datetime_input, "%Y-%m-%dT%H:%M")
+
+            conn = get_db_connection()
             conn.execute(
-                "INSERT INTO events (event_name, location, description, datetime, participants, max_participants, image, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (event_name, location, description, formatted_datetime, 0, max_participants, image_filename, session['username'])
+                "INSERT INTO events (event_name, location, description, datetime, participants, max_participants, image, created_by, status) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    event_name,
+                    location,
+                    description,
+                    event_datetime.isoformat(),
+                    0,  
+                    max_participants,
+                    image_filename,
+                    session['username'],
+                    'Pending'  
+                )
             )
             conn.commit()
             conn.close()

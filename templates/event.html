@@ -24,20 +24,26 @@
         {% if events %}
             {% for event in events %}
             <div class="event-card">
+                {% set holder = event['holder'] or 'No holder yet' %}
 
-                {% if username == event['created_by'] or username == 'admin' %}
-                <form action="{{ url_for('delete_event', event_id=event['id']) }}" method="post" style="display:inline;">
-                    <button class="delete-btn" type="submit">×</button>
-                </form>
+             
+                {% if username == event['created_by'] or username == 'admin' or username == event['holder'] %}
+                    <form action="{{ url_for('delete_event', event_id=event['id']) }}" method="post" style="display:inline;">
+                        <button class="delete-btn" type="submit">×</button>
+                    </form>
                 {% endif %}
 
                 <div class="event-main">
                     <img src="{{ event['image'] or '/static/uploads/default.jpg' }}" alt="Event Image" class="event-image">
 
+                    <p><strong>Holder:</strong> {{ holder }}</p>
+
+                  
                     <div class="event-actions">
+                    
                         {% if event['status'] == 'Pending' %}
                             {% if not event['joined'] %}
-                                {% if event['participants'] < 50 %}
+                                {% if event['participants'] < event['max_participants'] %}
                                     <form action="{{ url_for('join_event', event_id=event['id']) }}" method="post" style="display:inline;">
                                         <button class="join-btn" type="submit">Join</button>
                                     </form>
@@ -46,54 +52,53 @@
                                 {% endif %}
                             {% else %}
                                 <button class="join-btn joined" disabled>Joined</button>
+                                <form action="{{ url_for('leave_event', event_id=event['id']) }}" method="post" style="display:inline;">
+                                    <button class="leave-btn" type="submit">Leave</button>
+                                </form>
                             {% endif %}
+                        {% endif %}
 
-                            {% if event['joined'] %}
-                            <form action="{{ url_for('leave_event', event_id=event['id']) }}" method="post" style="display:inline;">
-                                <button class="leave-btn" type="submit">Leave</button>
-                            </form>
+                      
+                        {% if username == holder or username == 'admin' or username == event['created_by'] %}
+                            {% if event['status'] == 'In Progress' %}
+                                <form action="{{ url_for('clear_event', event_id=event['id']) }}" method="post" style="display:inline;">
+                                    <button class="clear-btn" type="submit">Area Cleared</button>
+                                </form>
+                            {% elif event['status'] == 'Resolved' %}
+                                {% if event.get('is_editing', False) %}
+                                    <form action="{{ url_for('submit_trash', event_id=event['id']) }}" method="post" style="display:inline;">
+                                        <input type="number" name="collected_trash" value="{{ event['collected_trash'] or 0 }}" min="0" step="0.1">
+                                        <button type="submit" class="submit-btn">Submit</button>
+                                    </form>
+                                {% else %}
+                                    <form action="{{ url_for('edit_trash', event_id=event['id']) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="edit-btn">Edit</button>
+                                    </form>
+                                {% endif %}
                             {% endif %}
-
-                        {% elif event['status'] == 'In Progress' %}
-                            <form action="{{ url_for('clear_event', event_id=event['id']) }}" method="post" style="display:inline;">
-                                <button class="clear-btn" type="submit">Area Cleared</button>
-                            </form>
                         {% endif %}
                     </div>
 
-                    
+                   
                     <div class="status-container">
                         <div class="status pending {% if event['status'] == 'Pending' %}active{% endif %}">Pending</div>
                         <div class="status in-progress {% if event['status'] == 'In Progress' %}active{% endif %}">In&nbsp;Progress</div>
                         <div class="status resolved {% if event['status'] == 'Resolved' %}active{% endif %}">Resolved</div>
                     </div>
 
-                    {% if event['status'] == 'Resolved' %}
-                    <div class="resolved-actions">
-                        <p>Collected Trash: {{ event['collected_trash'] or 0 }} kg</p>
-
-                        {% if username == event['created_by'] or username == 'admin' %}
-                            {% if event.get('is_editing', False) %}
-                            
-                                <form action="{{ url_for('submit_trash', event_id=event['id']) }}" method="post" style="display:inline;">
-                                    <input type="number" name="collected_trash" value="{{ event['collected_trash'] or 0 }}" min="0" step="0.1">
-                                    <button type="submit" class="submit-btn">Submit</button>
-                                </form>
-                            {% else %}
-                                
-                                <form action="{{ url_for('edit_trash', event_id=event['id']) }}" method="post" style="display:inline;">
-                                    <button type="submit" class="edit-btn">Edit</button>
-                                </form>
-                            {% endif %}
-                        {% endif %}
-                    </div>
+                    {% if event['status'] == 'Terminated' %}
+                        <p style="color:red;"><strong>Event Closed <br> No Participants</strong></p>
                     {% endif %}
-                </div>
+
+                    {% if event['status'] == 'Resolved' %}
+                        <p>Collected Trash: {{ event['collected_trash'] or 0 }} kg</p>
+                    {% endif %}
+                </div> 
 
                 <div class="event-details">
                     <p><strong>Location:</strong> {{ event['location'] }}</p>
                     <hr>
-                    <p><strong>Date & Time:</strong> {{ event['datetime'] }}</p>
+                    <p><strong>Date & Time:</strong> {{ event['readable_time'] }}</p>
                     <hr>
                     <p><strong>Participants:</strong> {{ event['participants'] }} / {{ event['max_participants'] }}</p>
                     <hr>
