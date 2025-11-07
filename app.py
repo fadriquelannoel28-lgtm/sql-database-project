@@ -356,9 +356,44 @@ def report():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'username' in session:
-        return render_template('dashboard.html', username=session['username'])
-    return redirect(url_for('login'))
+    conn = get_db_connection()
+
+    total_trash = conn.execute('SELECT SUM(collected_trash) FROM events').fetchone()[0] or 0
+    total_events = conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]
+    total_participants = conn.execute('SELECT COUNT(*) FROM event_participants').fetchone()[0]
+    pending_reports = conn.execute("SELECT COUNT(*) FROM events WHERE status='Pending'").fetchone()[0]
+
+    events = conn.execute('SELECT * FROM events ORDER BY id DESC').fetchall()
+
+    event_list = []
+    for e in events:
+        count = conn.execute(
+            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
+            (e['id'],)
+        ).fetchone()['count']
+
+        e_dict = dict(e)
+        e_dict['participants'] = count
+        try:
+            event_time = parse_event_datetime(e['datetime'])
+            e_dict['readable_time'] = event_time.strftime("%b %d, %Y - %I:%M %p")
+        except Exception:
+            e_dict['readable_time'] = e['datetime']
+
+        event_list.append(e_dict)
+
+    conn.close()
+
+    return render_template(
+        'dashboard.html',
+        total_trash=total_trash,
+        total_events=total_events,
+        total_participants=total_participants,
+        pending_reports=pending_reports,
+        events=event_list
+    )
+
+
 
 @app.route('/community')
 def community():

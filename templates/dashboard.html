@@ -1,70 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <nav>
-        <a href="{{ url_for('home') }}" class="home">Home</a>
-        <a href="{{ url_for('event') }}" class="event">Events</a>
-        <a href="{{ url_for('report') }}" class="report">Report</a>
-        <a href="{{ url_for('dashboard') }}" class="dashboard active">Dashboard</a>
-        <a href="{{ url_for('community') }}" class="community">Community</a>
-    </nav>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <h1>Hello, World!</h1>
-</body>
-</html>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Dashboard</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <nav>
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('event') }}">Events</a>
+            <a href="{{ url_for('report') }}">Report</a>
+            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+            <a href="{{ url_for('community') }}">Community</a>
+        </nav>
+
+        <div class="index margin-event" style="text-align:center;">
+            <h1>All Collected Trash: {{ total_trash }} kg</h1>
+            <p>Total Events: {{ total_events }} <br> Total Participants: {{ total_participants }} <br> Pending Reports: {{ pending_reports }}</p>
+        </div>
+
+        <div class="index" style="padding: 5px;">
+            <div class="event-list">
+                {% for e in events %}
+                <div class="event-card">
+                    <h3>{{ e['event_name'] }}</h3>
+                    <p><strong>Creator</strong><br> {{ e['created_by'] }}</p>
+                    <p><strong>Holder</strong><br> {{ e['holder_name'] or 'None' }}</p>
+                    <p><strong>Location</strong><br> {{ e['location'] }}</p>
+                    <p><strong>Description</strong><br> {{ e['description'] }}</p>
+                    <p><strong>Date</strong><br> {{ e['readable_time'] }}</p>
+                    <p><strong>Participants</strong><br> {{ e['participants'] }}</p>
+                    <p><strong>Trash Collected</strong><br> {{ e['collected_trash'] or 0 }} kg</p>
+                    <p><strong>Status</strong><br>
+                        <span class="status-text 
+                            {% if e['status'] == 'Pending' %}status-pending{% 
+                            elif e['status'] == 'In Progress' %}status-in-progress{% 
+                            elif e['status'] == 'Resolved' %}status-resolved{% 
+                            elif e['status'] == 'Terminated' %}status-terminated{% endif %}">
+                            {{ e['status'] }}
+                        </span>
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </body>
+    </html>
