@@ -1,26 +1,27 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Dashboard</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    </head>
-    <body>
-        <nav>
-            <a href="{{ url_for('home') }}">Home</a>
-            <a href="{{ url_for('event') }}">Events</a>
-            <a href="{{ url_for('report') }}">Report</a>
-            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
-            <a href="{{ url_for('community') }}">Community</a>
-        </nav>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('event') }}">Events</a>
+        <a href="{{ url_for('report') }}">Report</a>
+        <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+        <a href="{{ url_for('community') }}">Community</a>
+    </nav>
 
-        <div class="index margin-event" style="text-align:center;">
-            <h1>All Collected Trash: {{ total_trash }} kg</h1>
-            <p>Total Events: {{ total_events }} <br> Total Participants: {{ total_participants }} <br> Pending Reports: {{ pending_reports }}</p>
-        </div>
+    <div class="index margin-event" style="text-align:center;">
+        <h1>All Collected Trash: {{ total_trash }} kg</h1>
+        <p>Total Events: {{ total_events }} <br> Total Participants: {{ total_participants }} <br> Pending Reports: {{ pending_reports }}</p>
+    </div>
 
-        <div class="index" style="padding: 5px;">
-            <div class="event-list">
+    <div class="index" style="padding: 5px;">
+        <div class="event-list">
+            {% if events %}
                 {% for e in events %}
                 <div class="event-card">
                     <h3>{{ e['event_name'] }}</h3>
@@ -42,7 +43,10 @@
                     </p>
                 </div>
                 {% endfor %}
-            </div>
+            {% else %}
+                <p style="text-align:center; font-weight:bold; font-size:18px;">No Event Yet</p>
+            {% endif %}
         </div>
-    </body>
-    </html>
+    </div>
+</body>
+</html>
