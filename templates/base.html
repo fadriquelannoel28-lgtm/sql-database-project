@@ -1,0 +1,49 @@
+<!-- base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Water Cleaning{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <nav>
+        {% if session.username %}
+            <div class="nav left">
+                <span>Welcome, {{ session.username }}!</span>
+                <a href="{{ url_for('logout') }}" class="underline-draw">Logout</a>
+            </div>
+            <div class="nav-right">
+                <a href="{{ url_for('index') }}" class="underline-draw">Home</a>
+                <a href="{{ url_for('event') }}" class="underline-draw">Event</a>
+                <a href="{{ url_for('report') }}" class="underline-draw">Report</a>
+                <a href="{{ url_for('dashboard') }}" class="underline-draw">Dashboard</a>
+                <a href="{{ url_for('community') }}" class="underline-draw">Community</a>
+            </div>
+        {% endif %}
+    </nav>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+        <div class="footer-1">
+            <div class="footer-1-content">
+                <p><i class="fa-solid fa-school"></i> Batangas State University-Lipa Campus</p>
+                <p><i class="fa-solid fa-map-marker-alt"></i> A Tanco Dr, Maraouy, Lipa City, Batangas</p>
+                <p><i class="fa-solid fa-globe"></i> batstate-u.edu.ph</p>
+            </div>
+        </div>
+
+        <div class="footer-2">
+            <div class="footer-2-content">
+                <a href="{{ url_for('about') }}" class="underline-draw">About Us</a>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

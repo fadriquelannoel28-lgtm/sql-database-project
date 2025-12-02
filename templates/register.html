@@ -1,3 +1,4 @@
+<!-- register.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,37 +7,60 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="index login-margin">
+    <div class="register-center">
+        <div class="register">
+            <h1>Water Cleanup Movement</h1>
+            <h2>Register</h2>
+            <form method="POST">
+                {{ form.hidden_tag() }}
 
-        {% if error %}
-            <p style="color: red;">{{ error }}</p>
-        {% endif %}
-        {% if success %}
-            <p style="color: green;">{{ success }}</p>
-        {% endif %}
+                <div class="flex-register">
+                    {{ form.fullname.label }}<br>
+                    {{ form.fullname(size=30) }}<br>
+                    {% for error in form.fullname.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
 
-        <form method="POST">
-            <label>Full Name:</label><br>
-            <input type="text" name="fullname" required><br><br>
+                <div class="flex-register">
+                    {{ form.username.label }}<br>
+                    {{ form.username(size=30) }}<br>
+                    {% for error in form.username.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
 
-            <label>Username:</label><br>
-            <input type="text" name="username" required><br><br>
+                <div class="flex-register">
+                    {{ form.email.label }}<br>
+                    {{ form.email(size=30) }}<br>
+                    {% for error in form.email.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
 
-            <label>Email:</label><br>
-            <input type="email" name="email" required><br><br>
+                <div class="flex-register">
+                    {{ form.password.label }}<br>
+                    {{ form.password(size=30) }}<br>
+                    {% for error in form.password.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
 
-            <label>Password:</label><br>
-            <input type="password" name="password" required><br><br>
+                <div class="flex-register">
+                    {{ form.confirm_password.label }}<br>
+                    {{ form.confirm_password(size=30) }}<br>
+                    {% for error in form.confirm_password.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
 
-            <label>Confirm Password:</label><br>
-            <input type="password" name="confirm_password" required><br><br>
+                <button type="submit" class="my-btn">{{ form.submit.label.text }}</button>
 
-            <button type="submit">Register</button><br><br>
-
-            <p>Already have an account?<br><br>
-                <a href="{{ url_for('login') }}">Login here</a>
-            </p>
-        </form>
+                <p>Already have an account?<br>
+                    <a href="{{ url_for('login') }}">Login here</a>
+                </p>
+            </form>
+        </div>
     </div>
 </body>
 </html>

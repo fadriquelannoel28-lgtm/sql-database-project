@@ -1,0 +1,50 @@
+<!-- about.html -->
+{% extends "base.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+
+<div class="background">
+    <h1>About Us</h1>
+    <div class="container">
+        <div class="flex-person">
+            <div class="person-1 person">
+                <img src="{{ url_for('static', filename='uploads/person1.png') }}" alt="Annie Criselle" class="person-img">
+                <p>Annie Criselle R. Maligaya</p>
+                <p><strong>Role:</strong> UI/UX & Content Developer</p>
+                <p><strong>Year Level:</strong> 2nd Year College </p>
+                <p><strong>Github:</strong> </p>
+                <p><strong>Location:</strong> Antipolo Del Sur Lipa City, Batangas</p>
+            </div>
+            <div class="person-2 person">
+                <img src="{{ url_for('static', filename='uploads/person4.png') }}" alt="Joshua" class="person-img">
+                <p>Joshua R. Castronuevo</p>
+                <p><strong>Role:</strong> Documentation</p>
+                <p><strong>Year Level:</strong> 2nd Year College </p>
+                <p><strong>Github:</strong> Joshua</p>
+                <p><strong>Location:</strong> Maligaya, Rosario, Batangas</p>
+            </div>
+        </div>
+
+        <div class="flex-person">
+            <div class="person-3 person">
+                <img src="{{ url_for('static', filename='uploads/person3.png') }}" alt="Derick Gabriel" class="person-img">
+                <p>Derick Gabriel Penaflorida</p>
+                <p><strong>Role:</strong> Researcher</p>
+                <p><strong>Year Level:</strong> 2nd Year College </p>
+                <p><strong>Github:</strong> derickgb</p>
+                <p><strong>Location:</strong> Balibago, Rosario, Batangas</p>
+            </div>
+            <div class="person-4 person">
+                <img src="{{ url_for('static', filename='uploads/person2.png') }}" alt="Noel Andrei" class="person-img">
+                <p>Noel Andrei L. Fadriquelan</p>
+                <p><strong>Role:</strong> UI/UX & Content Developer</p>
+                <p><strong>Year Level:</strong> 2nd Year College </p>
+                <p><strong>Github:</strong> fadriquelannoel28-lgtm</p>
+                <p><strong>Location:</strong> Pinagkawitan Lipa City, Batangas</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,453 +1,494 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+# app.py
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, Email, EqualTo
+
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from flask import flash
-import sqlite3
+from functools import wraps
+from dateutil import parser
 import os
 
+from forms import LoginForm, RegisterForm, EventForm, CommunityForm
+from models import Base, User, Event, EventParticipant, CommunityPost
+
 app = Flask(__name__)
-app.secret_key = 'your_secret_key' 
+app.secret_key = 'water-cleaning-operation'
 
-DATABASE = 'database.db'
+engine = create_engine('sqlite:///database.db', echo=True)
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
 
-def parse_event_datetime(dt_str):
-    try:
-        return datetime.fromisoformat(dt_str)
-    except ValueError:
-        return datetime.strptime(dt_str, "%b %d, %Y - %I:%M %p")
-
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-if not os.path.exists(DATABASE):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    with open('sql-database-project.sql', 'r') as f:
-        sql_script = f.read()
-    cursor.executescript(sql_script)
-    conn.commit()
-    conn.close()
-    print("Database created successfully from SQL file!")
-
-
-conn = get_db_connection()
-
-admin_check = conn.execute("SELECT * FROM users WHERE username='admin'").fetchone()
-if not admin_check:
-    hashed_password = generate_password_hash("1234")
-    conn.execute(
-        "INSERT INTO users (fullname, username, email, password) VALUES (?, ?, ?, ?)",
-        ("Administrator", "admin", "admin@example.com", hashed_password)
-    )
-    conn.commit()
-    print("Admin user created successfully!")
-else:
-    print("Admin already exists.")
-
-conn.close()
 
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
+# ---------------------------------------------------------------------------------------------allowed pictures
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# --------------------------------------------------------- required login
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            flash("Please log in first.")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ---------------------------------------------------------------------------------------------index/home
 @app.route('/')
-def home():
-    if 'username' in session:
-        return render_template('index.html', username=session['username'])
+def index():
+    return render_template('index.html')
+
+# ---------------------------------------------------------------------------------------------Login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+
+    if form.validate_on_submit(): 
+        username = form.username.data
+        password = form.password.data
+
+        db_session = Session()
+        user = db_session.query(User).filter_by(username=username).first()
+
+        if user and check_password_hash(user.password, password):
+            session['username'] = user.username
+            flash(f"Welcome, {username}!")
+            db_session.close()
+            return redirect(url_for('index'))
+        else:
+            flash("Invalid username or password")
+            db_session.close()
+            return redirect(url_for('login'))
+
+    return render_template('login.html', form=form)
+
+# ----------------------------------------------------------------------------------------------register
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+
+    if form.validate_on_submit(): 
+        fullname = form.fullname.data
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        confirm_password = form.confirm_password.data
+
+        if password != confirm_password:
+            flash("Passwords do not match!")
+            return redirect(url_for('register'))
+
+        hashed_password = generate_password_hash(password)
+        db_session = Session()
+
+        if db_session.query(User).filter_by(username=username).first():
+            flash("Username already exists.")
+            return redirect(url_for('register'))
+
+        new_user = User(
+            fullname=fullname,
+            username=username,
+            email=email,
+            password=hashed_password
+        )
+        db_session.add(new_user)
+        db_session.commit()
+        flash("Registration successful! Please log in.")
+        return redirect(url_for('login'))
+
+    return render_template('register.html', form=form)
+
+# ----------------------------------------------------------------------------------------------logout
+@app.route('/logout')
+@login_required
+def logout():
+    username = session.pop('username', None)
+    flash(f"Goodbye, {username}! You have been logged out.")
     return redirect(url_for('login'))
 
-@app.route('/community', methods=['GET', 'POST'])
-def community():
-    if 'username' not in session:
-        return redirect(url_for('login'))
+# ----------------------------------------------------------------------------------------------home
+@app.route('/home')
+@login_required
+def home():
+    return render_template('index.html', username=session['username'])
 
-    conn = get_db_connection()
-    username = session['username']
-
-    if request.method == 'POST':
-        description = request.form['description']
-        picture = request.files['picture']
-
-        if picture and allowed_file(picture.filename):
-            filename = secure_filename(picture.filename)
-            picture.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            conn.execute(
-                "INSERT INTO community_posts (username, description, image) VALUES (?, ?, ?)",
-                (username, description, filename)
-            )
-            conn.commit()
-            flash("Post created successfully!", "success")
-            return redirect(url_for('community'))
-
-    posts = conn.execute(
-        "SELECT * FROM community_posts ORDER BY created_at DESC"
-    ).fetchall()
-
-    posts_list = []
-    for post in posts:
-        post_dict = dict(post)
-        try:
-            post_dict['created_at'] = datetime.fromisoformat(post_dict['created_at'])
-        except Exception:
-            post_dict['created_at'] = None
-        posts_list.append(post_dict)
-    conn.close()
-
-    return render_template('community.html', posts=posts_list)
-
-
-@app.route('/delete_post/<int:post_id>', methods=['POST'])
-def delete_post(post_id):
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    username = session['username']
-    conn = get_db_connection()
-    post = conn.execute("SELECT * FROM community_posts WHERE id=?", (post_id,)).fetchone()
-
-    if post and (post['username'] == username or username == 'admin'):
-        conn.execute("DELETE FROM community_posts WHERE id=?", (post_id,))
-        conn.commit()
-    
-    conn.close()
-    return redirect(url_for('community'))
-
-
-@app.route('/event')
+# ----------------------------------------------------------------------------------------------events
+@app.route('/home/event')
 def event():
     if 'username' not in session:
         return redirect(url_for('login'))
 
     username = session['username']
-    conn = get_db_connection()
-    events = conn.execute("SELECT * FROM events ORDER BY id DESC").fetchall()
+    db_session = Session()
 
+    events = db_session.query(Event).order_by(Event.id.desc()).all()
     events_with_joined = []
-    edit_trash_event_id = session.get('edit_trash_event') 
+    edit_trash_event_id = session.get('edit_trash_event')
 
     for e in events:
-        joined = conn.execute(
-            "SELECT 1 FROM event_participants WHERE event_id=? AND username=?",
-            (e['id'], username)
-        ).fetchone() is not None
+        joined = db_session.query(EventParticipant).filter_by(event_id=e.id, username=username).first() is not None
 
-        count = conn.execute(
-            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
-            (e['id'],)
-        ).fetchone()['count']
+        count = db_session.query(EventParticipant).filter_by(event_id=e.id).count()
 
-        event_time = parse_event_datetime(e['datetime'])
-        status = e['status']
+        try:
+            event_time = parser.parse(e.datetime)
+        except Exception:
+            event_time = datetime.strptime(e.datetime, "%Y-%m-%d %H:%M")
+
+        status = e.status
 
         if count == 0 and datetime.now() >= event_time and status != 'Terminated':
-            conn.execute("UPDATE events SET status='Terminated' WHERE id=?", (e['id'],))
-            conn.commit()
+            e.status = 'Terminated'
+            db_session.commit()
             status = 'Terminated'
 
-        first_participant = conn.execute(
-            "SELECT username FROM event_participants WHERE event_id=? ORDER BY id ASC LIMIT 1",
-            (e['id'],)
-        ).fetchone()
-
-        holder = e['created_by']  
-        if conn.execute("SELECT 1 FROM event_participants WHERE event_id=? AND username=?",
-                        (e['id'], e['created_by'])).fetchone():
-            holder = e['created_by']
+        first_participant = db_session.query(EventParticipant).filter_by(event_id=e.id).order_by(EventParticipant.id.asc()).first()
+        holder = e.created_by
+        if db_session.query(EventParticipant).filter_by(event_id=e.id, username=e.created_by).first():
+            holder = e.created_by
         elif first_participant:
-            holder = first_participant['username']
+            holder = first_participant.username
 
-        holder = holder.strip() if holder else e['created_by']
-        if not e['holder_name'] or e['holder_name'].strip() != holder:
-            conn.execute("UPDATE events SET holder_name=? WHERE id=?", (holder, e['id']))
-            conn.commit()
+        holder = holder.strip() if holder else e.created_by
+        if not e.holder_name or e.holder_name.strip() != holder:
+            e.holder_name = holder
+            db_session.commit()
 
-        e_dict = dict(e)
-        e_dict['joined'] = joined
-        e_dict['participants'] = count
-        e_dict['max_participants'] = e['max_participants']
-        e_dict['is_editing'] = (edit_trash_event_id == e['id'])
-        e_dict['holder'] = holder
-        e_dict['status'] = status
-        e_dict['readable_time'] = event_time.strftime("%b %d, %Y - %I:%M %p")
+        e_dict = {
+            'id': e.id,
+            'event_name': e.event_name,
+            'location': e.location,
+            'description': e.description,
+            'datetime': e.datetime,
+            'participants': count,
+            'max_participants': e.max_participants,
+            'joined': joined,
+            'is_editing': (edit_trash_event_id == e.id),
+            'holder': holder,
+            'status': status,
+            'readable_time': event_time.strftime("%b %d, %Y - %I:%M %p"), 
+            'image': e.image,
+            'collected_trash': e.collected_trash
+        }
 
         events_with_joined.append(e_dict)
 
-    conn.close()
     session.pop('edit_trash_event', None)
+    db_session.close()
 
     return render_template('event.html', username=username, events=events_with_joined)
 
-@app.route('/join/<int:event_id>', methods=['POST'])
-def join_event(event_id):
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
+# ----------------------------------------------------------------------------------------------refresh
+@app.route('/refresh_events', methods=['POST'])
+@login_required
+def refresh_events():
+    db_session = Session()
     username = session['username']
-    conn = get_db_connection()
+    now = datetime.now()
 
-    already_joined = conn.execute(
-        "SELECT * FROM event_participants WHERE event_id=? AND username=?",
-        (event_id, username)
-    ).fetchone()
 
-    if not already_joined:
-        participants = conn.execute(
-            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
-            (event_id,)
-        ).fetchone()['count']
+    events = db_session.query(Event).filter_by(status='Pending').all()
 
-        max_participants = conn.execute(
-            "SELECT max_participants FROM events WHERE id=?",
-            (event_id,)
-        ).fetchone()['max_participants']
+    for event in events:
+        event_time = parser.parse(event.datetime)  
 
-        if participants < max_participants:
-            conn.execute(
-                "INSERT INTO event_participants (event_id, username) VALUES (?, ?)",
-                (event_id, username)
+        
+        count = db_session.query(EventParticipant).filter_by(event_id=event.id).count()
+
+      
+        if now >= event_time:
+            if count == 0:
+                event.status = 'Terminated'
+            else:
+                event.status = 'In Progress'
+
+    db_session.commit()
+    db_session.close()
+
+    return redirect(url_for('event'))
+
+# ----------------------------------------------------------------------------------------------report
+@app.route('/home/report', methods=['GET', 'POST'])
+@login_required
+def report():
+    error = None
+    success = None
+    min_date = datetime.now()
+
+    form = EventForm()
+
+    if form.validate_on_submit():
+        event_name = form.event_name.data
+        location = form.location.data
+        description = form.description.data
+        event_datetime = form.datetime.data
+        image = form.image.data
+
+        if event_datetime < min_date:
+            error = "You cannot select a past date!"
+        else:
+            max_participants = form.participants.data or 50
+
+            db_session = Session()
+            new_event = Event(
+                event_name=event_name,
+                location=location,
+                description=description,
+                datetime=event_datetime.isoformat(),
+                participants=0,
+                max_participants=max_participants,
+                image=None,
+                created_by=session['username'],
+                status='Pending'
             )
+            db_session.add(new_event)
+            db_session.commit()
 
-            current_holder = conn.execute(
-                "SELECT holder_name FROM events WHERE id=?",
-                (event_id,)
-            ).fetchone()['holder_name']
+            if image and image.filename != '':
+                upload_dir = "static/uploads"
+                os.makedirs(upload_dir, exist_ok=True)
 
-            if not current_holder:
-                conn.execute(
-                    "UPDATE events SET holder_name=? WHERE id=?",
-                    (username, event_id)
-                )
+                dt_str = event_datetime.strftime("%Y%m%d-%H%M")
+                creator_name = session['username'].replace(" ", "_")
+                ext = os.path.splitext(image.filename)[1]
+                filename = f"id-{new_event.id}-creator-{creator_name}-datetime-{dt_str}{ext}"
 
-            conn.commit()
+                image.save(os.path.join(upload_dir, filename))
+                new_event.image = f"/static/uploads/{filename}"
+                db_session.commit()
 
-    conn.close()
-    return redirect(url_for('event'))
+            db_session.close()
+            success = f"Event '{event_name}' created successfully!"
 
-
-@app.route('/leave/<int:event_id>', methods=['POST'])
-def leave_event(event_id):
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    username = session['username']
-    conn = get_db_connection()
-    conn.execute(
-        "DELETE FROM event_participants WHERE event_id=? AND username=?",
-        (event_id, username)
+    return render_template(
+        'report.html',
+        form=form,
+        error=error,
+        success=success,
+        min_date=min_date.strftime("%Y-%m-%dT%H:%M")
     )
-    conn.commit()
-    conn.close()
-    return redirect(url_for('event'))
 
+# ----------------------------------------------------------------------------------------------delete
 @app.route('/delete_event/<int:event_id>', methods=['POST'])
 def delete_event(event_id):
     if 'username' not in session:
         return redirect(url_for('login'))
 
     username = session['username']
-    conn = get_db_connection()
+    db_session = Session()
 
-    event = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
-    if event and (event['created_by'] == username or username == 'admin' or event['holder_name'] == username):
-        conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
-        conn.execute("DELETE FROM event_participants WHERE event_id = ?", (event_id,))
-        conn.commit()
+    event = db_session.query(Event).filter_by(id=event_id).first()
 
-    conn.close()
+    if not event:
+        db_session.close()
+        return redirect(url_for('event'))
+
+    allowed = (
+        event.created_by == username or
+        username == 'admin' or
+        event.holder_name == username
+    )
+
+    if allowed:
+        db_session.query(EventParticipant).filter_by(event_id=event_id).delete()
+
+        db_session.delete(event)
+        db_session.commit()
+
+    db_session.close()
     return redirect(url_for('event'))
 
-@app.route('/refresh_events', methods=['POST'])
-def refresh_events():
-    if 'username' not in session:
-        return redirect(url_for('login'))
 
-    conn = get_db_connection()
-    events = conn.execute("SELECT * FROM events WHERE status = 'Pending'").fetchall()
-    now = datetime.now()
-
-    for event in events:
-        event_time = parse_event_datetime(event['datetime'])
-
-        count = conn.execute(
-            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
-            (event['id'],)
-        ).fetchone()['count']
-
-        if now >= event_time:
-            if count == 0:
-                conn.execute("UPDATE events SET status = 'Terminated' WHERE id = ?", (event['id'],))
-            else:
-                conn.execute("UPDATE events SET status = 'In Progress' WHERE id = ?", (event['id'],))
-
-    conn.commit()
-    conn.close()
-    
-    return redirect(url_for('event'))
-
-@app.route('/clear_event/<int:event_id>', methods=['POST'])
-def clear_event(event_id):
+# ----------------------------------------------------------------------------------------------join
+@app.route('/join/<int:event_id>', methods=['POST'])
+def join_event(event_id):
     if 'username' not in session:
         return redirect(url_for('login'))
 
     username = session['username']
-    conn = get_db_connection()
-    
-    event = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
-    
-    if event and (username == event['holder_name'] or username == 'admin'):
-        participant_count = conn.execute(
-            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
-            (event_id,)
-        ).fetchone()['count']
-        
-        if participant_count == 0:
-            conn.execute("UPDATE events SET status = 'Terminated' WHERE id = ?", (event_id,))
-        else:
-            conn.execute("UPDATE events SET status = 'Resolved' WHERE id = ?", (event_id,))
-        
-        conn.commit()
+    db_session = Session()
 
-    conn.close()
+    event = db_session.query(Event).filter_by(id=event_id).first()
+    if not event:
+        db_session.close()
+        return redirect(url_for('event'))
+
+    already_joined = (
+        db_session.query(EventParticipant)
+        .filter_by(event_id=event_id, username=username)
+        .first()
+        is not None
+    )
+
+    if not already_joined:
+        participants = (
+            db_session.query(EventParticipant)
+            .filter_by(event_id=event_id)
+            .count()
+        )
+
+      
+        if participants < event.max_participants:
+            join_entry = EventParticipant(event_id=event_id, username=username)
+            db_session.add(join_entry)
+
+          
+            if not event.holder_name or event.holder_name.strip() == "":
+                event.holder_name = username
+
+            db_session.commit()
+
+    db_session.close()
     return redirect(url_for('event'))
 
-@app.route('/submit_trash/<int:event_id>', methods=['POST'])
-def submit_trash(event_id):
+
+# ----------------------------------------------------------------------------------------------leave
+@app.route('/leave/<int:event_id>', methods=['POST'])
+def leave_event(event_id):
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    conn = get_db_connection()
-    event = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
+    username = session['username']
+    db_session = Session()
 
-    holder = event['holder_name']
-    if not (session['username'] == holder or session['username'] == event['created_by'] or session['username'] == 'admin'):
-        conn.close()
-        return "You are not allowed to submit or edit trash for this event.", 403
+    db_session.query(EventParticipant).filter_by(
+        event_id=event_id, username=username
+    ).delete()
+
+    event = db_session.query(Event).filter_by(id=event_id).first()
+    if event and event.holder_name == username:
+        event.holder_name = None
+
+    db_session.commit()
+    db_session.close()
+
+    return redirect(url_for('event'))
+
+
+# ----------------------------------------------------------------------------------------------clear
+@app.route('/clear_event/<int:event_id>', methods=['POST'])
+@login_required
+def clear_event(event_id):
+    username = session['username']
+    db_session = Session()
+
+    event = db_session.query(Event).filter_by(id=event_id).first()
+
+    if event and (username == event.holder_name or username == 'admin'):
+        participant_count = db_session.query(EventParticipant).filter_by(event_id=event_id).count()
+
+        if participant_count == 0:
+            event.status = 'Terminated'
+        else:
+            event.status = 'Resolved'
+
+        db_session.commit()
+
+    db_session.close()
+    return redirect(url_for('event'))
+
+
+# ----------------------------------------------------------------------------------------------edit trash
+@app.route('/edit_trash/<int:event_id>', methods=['POST'])
+@login_required
+def edit_trash(event_id):
+    username = session['username']
+    db_session = Session()
+
+    event = db_session.query(Event).filter_by(id=event_id).first()
+
+    if event:
+        if username == event.holder_name or username == 'admin' or username == event.created_by:
+            session['edit_trash_event'] = event_id
+
+    db_session.close()
+    return redirect(url_for('event'))
+
+
+# ----------------------------------------------------------------------------------------------submit
+@app.route('/submit_trash/<int:event_id>', methods=['POST'])
+@login_required
+def submit_trash(event_id):
+    username = session['username']
+    db_session = Session()
+
+    event = db_session.query(Event).filter_by(id=event_id).first()
+    if not event:
+        db_session.close()
+        return redirect(url_for('event'))
+
+    if username != event.holder_name and username != event.created_by and username != 'admin':
+        db_session.close()
+        return "You are not allowed to submit or edit for this event.", 403
 
     collected_trash = request.form.get('collected_trash', 0)
     try:
-        collected_trash = float(collected_trash)  
+        collected_trash = float(collected_trash)
     except ValueError:
         collected_trash = 0
 
-    conn.execute(
-        "UPDATE events SET collected_trash = ? WHERE id = ?",
-        (collected_trash, event_id)
-    )
-    conn.commit()
-    conn.close()
+    event.collected_trash = collected_trash
+    db_session.commit()
+    db_session.close()
+
+    session.pop('edit_trash_event', None)
+
     return redirect(url_for('event'))
 
-@app.route('/edit_trash/<int:event_id>', methods=['POST'])
-def edit_trash(event_id):
-    
-    conn = get_db_connection()
-    event = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
-    conn.close()
-
-   
-    session['edit_trash_event'] = event_id  
-    return redirect(url_for('event')) 
 
 
-MAX_PARTICIPANTS = 50
 
-@app.route('/report', methods=['GET', 'POST'])
-def report():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    error = None
-    success = None
-    min_date = datetime.now().strftime("%Y-%m-%dT%H:%M")  
-
-    if request.method == 'POST':
-        event_name = request.form.get('event_name')
-        location = request.form.get('location')
-        description = request.form.get('description')
-        datetime_input = request.form.get('datetime')  
-        image = request.files.get('image')
-
-        if datetime_input < min_date:
-            error = "You cannot select a past date!"
-        else:
-            image_filename = None
-            if image and image.filename != '':
-                upload_dir = "static/uploads"
-                os.makedirs(upload_dir, exist_ok=True)
-                image_filename = os.path.join(upload_dir, image.filename)
-                image.save(image_filename)
-
-            max_participants_input = request.form.get('participants')
-            max_participants = int(max_participants_input) if max_participants_input else 50
-
-            event_datetime = datetime.strptime(datetime_input, "%Y-%m-%dT%H:%M")
-
-            conn = get_db_connection()
-            conn.execute(
-                "INSERT INTO events (event_name, location, description, datetime, participants, max_participants, image, created_by, status) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    event_name,
-                    location,
-                    description,
-                    event_datetime.isoformat(),
-                    0,  
-                    max_participants,
-                    image_filename,
-                    session['username'],
-                    'Pending'  
-                )
-            )
-            conn.commit()
-            conn.close()
-            success = f"Event '{event_name}' created successfully!"
-
-    return render_template(
-        'report.html',
-        error=error,
-        success=success,
-        username=session['username'],
-        min_date=min_date
-    )
-
+# ----------------------------------------------------------------------------------------------dashboard
 @app.route('/dashboard')
 def dashboard():
-    conn = get_db_connection()
+    db_session = Session()
 
-    total_trash = conn.execute('SELECT SUM(collected_trash) FROM events').fetchone()[0] or 0
-    total_events = conn.execute('SELECT COUNT(*) FROM events').fetchone()[0]
-    total_participants = conn.execute('SELECT COUNT(*) FROM event_participants').fetchone()[0]
-    pending_reports = conn.execute("SELECT COUNT(*) FROM events WHERE status='Pending'").fetchone()[0]
+    total_trash = db_session.query(Event).with_entities(
+        func.coalesce(func.sum(Event.collected_trash), 0)
+    ).scalar()
+    total_events = db_session.query(Event).count()
+    total_participants = db_session.query(EventParticipant).count()
+    pending_reports = db_session.query(Event).filter_by(status='Pending').count()
 
-    events = conn.execute('SELECT * FROM events ORDER BY id DESC').fetchall()
+    events = db_session.query(Event).order_by(Event.id.desc()).all()
 
     event_list = []
     for e in events:
-        count = conn.execute(
-            "SELECT COUNT(*) AS count FROM event_participants WHERE event_id=?",
-            (e['id'],)
-        ).fetchone()['count']
+        count = db_session.query(EventParticipant).filter_by(event_id=e.id).count()
+        e_dict = {
+            'id': e.id,
+            'event_name': e.event_name,
+            'location': e.location,
+            'description': e.description,
+            'datetime': e.datetime,
+            'participants': count,
+            'max_participants': e.max_participants,
+            'status': e.status,
+            'holder_name': e.holder_name,
+            'collected_trash': e.collected_trash,
+            'image': e.image,
+            'created_by': e.created_by
+        }
 
-        e_dict = dict(e)
-        e_dict['participants'] = count
         try:
-            event_time = parse_event_datetime(e['datetime'])
+            event_time = parser.parse(e.datetime) if isinstance(e.datetime, str) else e.datetime
             e_dict['readable_time'] = event_time.strftime("%b %d, %Y - %I:%M %p")
         except Exception:
-            e_dict['readable_time'] = e['datetime']
+            e_dict['readable_time'] = str(e.datetime)
 
         event_list.append(e_dict)
 
-    conn.close()
+    db_session.close()
 
     return render_template(
         'dashboard.html',
@@ -458,62 +499,70 @@ def dashboard():
         events=event_list
     )
 
+# ----------------------------------------------------------------------------------------------community
+@app.route('/home/community', methods=['GET', 'POST'])
+@login_required
+def community():
+    username = session['username']
+    db_session = Session()
+    form = CommunityForm()
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = None
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    if form.validate_on_submit():
+        description = form.description.data
+        picture = form.picture.data
+        image_filename = None
 
-        conn = get_db_connection()
-        user = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
-        conn.close()
+        if picture:
+            upload_dir = app.config.get('UPLOAD_FOLDER', 'static/uploads')
+            os.makedirs(upload_dir, exist_ok=True)
 
-        if user and check_password_hash(user['password'], password):
-            session['username'] = user['username']
-            return redirect(url_for('home'))
-        else:
-            error = "Invalid username or password"
+            dt_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+            ext = os.path.splitext(picture.filename)[1]
+            safe_username = username.replace(" ", "_")
+            filename = f"user-{safe_username}-datetime-{dt_str}{ext}"
+            picture.save(os.path.join(upload_dir, filename))
+            image_filename = filename
 
-    return render_template('login.html', error=error)
+        new_post = CommunityPost(username=username, description=description, image=image_filename)
+        db_session.add(new_post)
+        db_session.commit()
+        db_session.close()
+        flash("Post created successfully!", "success")
+        return redirect(url_for('community'))
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    error = None
-    success = None
+    posts = db_session.query(CommunityPost).order_by(CommunityPost.created_at.desc()).all()
+    posts_list = [{
+        'id': post.id,
+        'username': post.username,
+        'description': post.description,
+        'image': post.image,
+        'created_at': post.created_at
+    } for post in posts]
 
-    if request.method == 'POST':
-        fullname = request.form['fullname']
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        confirm = request.form['confirm_password']
+    db_session.close()
+    return render_template('community.html', posts=posts_list, form=form)
 
-        if password != confirm:
-            error = "Passwords do not match!"
-        else:
-            conn = get_db_connection()
+# ----------------------------------------------------------------------------------------------delete post
+@app.route('/delete_post/<int:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    username = session['username']
+    db_session = Session()
 
-            user_check = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
-            if user_check:
-                error = "Username already exists!"
-            else:
-                hashed_pw = generate_password_hash(password)
-                conn.execute(
-                    "INSERT INTO users (fullname, username, email, password) VALUES (?, ?, ?, ?)",
-                    (fullname, username, email, hashed_pw)
-                )
-                conn.commit()
-                success = "Registration successful! You can now log in."
-            conn.close()
+    post = db_session.query(CommunityPost).filter_by(id=post_id).first()
 
-    return render_template('register.html', error=error, success=success)
+    if post and (post.username == username or username == 'admin'):
+        db_session.delete(post)
+        db_session.commit()
 
-@app.route('/logout')
-def logout():
-    session.pop('username', None)
-    return redirect(url_for('login'))
+    db_session.close()
+    return redirect(url_for('community'))
+
+# ----------------------------------------------------------------------------------------------about
+
+@app.route("/home/about")
+def about():
+    return render_template("about.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
