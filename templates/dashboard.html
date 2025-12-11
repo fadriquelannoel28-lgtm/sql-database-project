@@ -6,42 +6,48 @@
 {% block content %}
 <div class="dashboard-main" style="text-align:center;">
     <div class="flex-main-dashboard">
-    <h1 class="left-d" style="font-size: 40px;">All Collected Trash: {{ total_trash }} kg</h1>
-    <p class="right-d">
-        Total Events: {{ total_events }} <br> 
-        Total Participants: {{ total_participants }} <br> 
-        Pending Reports: {{ pending_reports }}
-    </p>
+        <div class="dashboard-card">
+            <h1 class="left-d" style="font-size: 40px;">{{ total_trash }} kg <br> <h3>All Collected Trash </h3></h1>
+        </div>
+        <div class="dashboard-card">
+            <h1 class="left-d" style="font-size: 40px;">{{ total_events }} <br> <h3>Total Events</h3></h1>
+        </div>
+        <div class="dashboard-card">
+            <h1 class="left-d" style="font-size: 40px;">{{ total_participants }} <br> <h3>Total Participants</h3></h1>
+        </div>
+        <div class="dashboard-card">
+            <h1 class="left-d" style="font-size: 40px;">{{ pending_reports }} <br> <h3>Pending Reports</h3></h1>
+        </div>
     </div>
 
-<div class="dashboard-content" style="padding: 5px;">
-    <div class="event-list">
-        {% if events %}
-            {% for e in events %}
-            <div class="event-card">
-                <p><strong>Title</strong><br>{{ e['event_name'] }}</p>
-                <p><strong>Creator</strong><br> {{ e.get('created_by', 'Unknown') }}</p>
-                <p><strong>Holder</strong><br> {{ e['holder_name'] or 'None' }}</p>
-                <p><strong>Location</strong><br> {{ e['location'] }}</p>
-                <p><strong>Description</strong><br> {{ e['description'] }}</p>
-                <p><strong>Date</strong><br> {{ e['readable_time'] }}</p>
-                <p><strong>Participants</strong><br> {{ e['participants'] }}</p>
-                <p><strong>Trash Collected</strong><br> {{ e['collected_trash'] or 0 }} kg</p>
-                <p><strong>Status</strong><br>
-                    <span class="status-text 
-                        {% if e['status'] == 'Pending' %}status-pending{% 
-                        elif e['status'] == 'In Progress' %}status-in-progress{% 
-                        elif e['status'] == 'Resolved' %}status-resolved{% 
-                        elif e['status'] == 'Terminated' %}status-terminated{% endif %}">
-                        {{ e['status'] }}
-                    </span>
-                </p>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p style="text-align:center; font-weight:bold; font-size:18px;">No Event Yet</p>
-        {% endif %}
+    <div class="dashboard-content" style="padding: 5px;">
+        <div class="event-list">
+            {% if events %}
+                {% for e in events %}
+                <div class="event-card">
+                    <p><strong>Title</strong><br>{{ e['event_name'] }}</p>
+                    <p><strong>Creator</strong><br> {{ e.get('created_by', 'Unknown') }}</p>
+                    <p><strong>Holder</strong><br> {{ e['holder_name'] or 'None' }}</p>
+                    <p><strong>Location</strong><br> {{ e['location'] }}</p>
+                    <p><strong>Description</strong><br> {{ e['description'] }}</p>
+                    <p><strong>Date</strong><br> {{ e['readable_time'] }}</p>
+                    <p><strong>Participants</strong><br> {{ e['participants'] }}</p>
+                    <p><strong>Trash Collected</strong><br> {{ e['collected_trash'] or 0 }} kg</p>
+                    <p><strong>Status</strong><br>
+                        <span class="status-text 
+                            {% if e['status'] == 'Pending' %}status-pending{% 
+                            elif e['status'] == 'In Progress' %}status-in-progress{% 
+                            elif e['status'] == 'Resolved' %}status-resolved{% 
+                            elif e['status'] == 'Terminated' %}status-terminated{% endif %}">
+                            {{ e['status'] }}
+                        </span>
+                    </p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="text-align:center; font-weight:bold; font-size:18px;">No Event Yet</p>
+            {% endif %}
+        </div>
     </div>
-</div>
 </div>
 {% endblock %}

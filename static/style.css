@@ -469,16 +469,35 @@ span:hover {
 }
 .flex-main-dashboard {
     display: flex;
-    margin: 10px 250px;
+    margin: 10px;
     background: #ccc;
     border-radius: 6px;
-}
-.flex-main-dashboard .left-d {
-    width: 65%;
+    justify-content: space-between; 
+    align-items: flex-start;        
+    flex-wrap: wrap;               
+    gap: 10px;                     
 }
 .flex-main-dashboard .right-d {
     font-size: 20px;
     text-align: left;
+}
+.dashboard-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: #e8e8e8;
+    margin: 10px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    width: 240px;
+    height: 250px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 0 0 #b8b8b8;
 }
 
 .dashboard-content {
@@ -558,6 +577,7 @@ textarea.description {
 .status-text.status-terminated:hover {
     background-color: #ff0000; 
 }
+
 
 /*------------------------------------community*/
 .community-main {
