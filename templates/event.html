@@ -1,4 +1,3 @@
-<!--event.html-->
 {% extends "base.html" %}
 
 {% block title %}Events{% endblock %}
@@ -6,11 +5,6 @@
 {% block content %}
 
 <div class="event-content">
-    <div style="text-align: right; margin: 10px 50px;">
-        <form action="{{ url_for('refresh_events') }}" method="post">
-            <button type="submit" class="refresh">Refresh</button>
-        </form>
-    </div>
     {% if events %}
         {% for event in events %}
         <div class="event-container">
@@ -50,13 +44,15 @@
                                 <button class="clear-btn" type="submit">Area Cleared</button>
                             </form>
                         {% elif event['status'] == 'Resolved' %}
-                            {% if event.get('is_editing', False) %}
+                            {% if session.get('editing_event_id') == event['id'] %}
                                 <form action="{{ url_for('submit_trash', event_id=event['id']) }}" method="post" style="display:inline;">
-                                    <input type="number" name="collected_trash" value="{{ event['collected_trash'] or 0 }}" min="0" step="0.1">
+                                    <input type="number" name="collected_trash" value="{{ event['collected_trash'] }}" min="0" step="0.1">
+                                    kg
                                     <button type="submit" class="submit-btn">Submit</button>
                                 </form>
                             {% else %}
                                 <form action="{{ url_for('edit_trash', event_id=event['id']) }}" method="post" style="display:inline;">
+                                    <p>{{ event['collected_trash'] }} kg</p>
                                     <button type="submit" class="edit-btn">Edit</button>
                                 </form>
                             {% endif %}
@@ -70,12 +66,8 @@
                     <div class="status resolved {% if event['status'] == 'Resolved' %}active{% endif %}">Resolved</div>
                 </div>
 
-                {% if event['status'] == 'Terminated' %}
+                {% if event['status'] == 'Terminated' and event['participants'] == 0 %}
                     <p style="color:red;"><strong>Event Closed <br> No Participants</strong></p>
-                {% endif %}
-
-                {% if event['status'] == 'Resolved' %}
-                    <p>Collected Trash: {{ event['collected_trash'] or 0 }} kg</p>
                 {% endif %}
             </div>
 
